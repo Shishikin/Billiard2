@@ -52,6 +52,7 @@ public:
 
 // Опережающие объявления типов данных, чтобы можно было 
 // создать переменные-указатели на эти типы
+class GraphicalObject;
 class Hole;
 class Wall;
 class Ball;
@@ -109,9 +110,29 @@ public:
 	void NormalizeRect();
 };
 
+class GraphicalObject {
+public:
+	GraphicalObject(int left, int top, int right, int bottom)
+	{
+		tregion = Rect(left, top, right, bottom);
+	}
+	// Операции, выполняемые графическими объектами 
+	virtual void Draw() const {}
+	virtual void Update() {}
+	virtual void HitBy(Ball& ball) {}
+	// Функции-члены для доступа к переменным класса 
+	Rect GetRegion() const { return tregion; }
+	const GraphicalObject* GetLink() const { return tpLink; }
+	GraphicalObject* GetLink() { return tpLink; }
+protected:
+	Rect tregion;
+	GraphicalObject* tpLink;
+};
+
 
 // Класс "Бильярдный шар"
-class Ball {
+class Ball : public GraphicalObject
+{
 public:
 	Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb);
 	// Запрет копирующего конструктора и операции присваивания 
@@ -160,6 +181,18 @@ private:
 	RedGreenBlue rgb = RedGreenBlue(0, 0, 255);
 	//	RedGreenBlue re
 };
+
+
+Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
+	GraphicalObject(x - 5, y - 5, x, y),
+	pLink(pNextBall),
+	fCue(fc),
+	rgb(rgb_)
+{
+	SetCenter(x, y);
+	SetDirection(0);
+	SetEnergy(0.0);
+}
 
 
 // Класс "Стенка бильярдного стола"
@@ -339,8 +372,9 @@ void Hole::HitBy(Ball& ball)
 //   Реализация класса Ball
 // ********************************************************************************
 
-
+/*
 Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
+	GraphicalObject(x-5, y-5, x, y),
 	pLink(pNextBall),
 	fCue(fc),
 	rgb(rgb_)
@@ -349,7 +383,7 @@ Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
 	SetDirection(0);
 	SetEnergy(0.0);
 }
-
+*/
 
 void Ball::Draw() const
 {
