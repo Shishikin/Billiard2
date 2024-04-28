@@ -113,7 +113,6 @@ public:
 // Класс "Бильярдный шар"
 class Ball {
 public:
-	Ball(int x, int y, bool fc, Ball* pNextBall);
 	Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb);
 	// Запрет копирующего конструктора и операции присваивания 
 	// с помощью ключевого слова delete 
@@ -339,14 +338,6 @@ void Hole::HitBy(Ball& ball)
 // ********************************************************************************
 //   Реализация класса Ball
 // ********************************************************************************
-Ball::Ball(int x, int y, bool fc, Ball* pNextBall) :
-	pLink(pNextBall),
-	fCue(fc)
-{
-	SetCenter(x, y);
-	SetDirection(0);
-	SetEnergy(0.0);
-}
 
 
 Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
@@ -558,7 +549,7 @@ void CreateGlobals()
 	// списке белый шар располагается последним.
 	RedGreenBlue rgb = RedGreenBlue(0, 0, 255);
 	int count = 0;
-	pCueBall = new Ball(50, 108, true, NULL);
+	pCueBall = new Ball(50, 108, true, NULL, rgb);
 	listOfBalls = pCueBall;
 	for (int i = 1; i <= 5; i++)
 		for (int j = 1; j <= i; j++)
