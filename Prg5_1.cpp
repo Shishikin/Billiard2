@@ -114,19 +114,19 @@ class GraphicalObject {
 public:
 	GraphicalObject(int left, int top, int right, int bottom)
 	{
-		tregion = Rect(left, top, right, bottom);
+		region = Rect(left, top, right, bottom);
 	}
 	// Операции, выполняемые графическими объектами 
 	virtual void Draw() const {}
 	virtual void Update() {}
 	virtual void HitBy(Ball& ball) {}
 	// Функции-члены для доступа к переменным класса 
-	Rect GetRegion() const { return tregion; }
-	const GraphicalObject* GetLink() const { return tpLink; }
-	GraphicalObject* GetLink() { return tpLink; }
+	Rect GetRegion() const { return region; }
+	const GraphicalObject* GetLink() const { return pLink; }
+	GraphicalObject* GetLink() { return pLink; }
 protected:
-	Rect tregion;
-	GraphicalObject* tpLink;
+	Rect region;
+	GraphicalObject* pLink =nullptr;
 };
 
 
@@ -134,7 +134,7 @@ protected:
 class Ball : public GraphicalObject
 {
 public:
-	Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb);
+	Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb);
 	// Запрет копирующего конструктора и операции присваивания 
 	// с помощью ключевого слова delete 
 	Ball(const Ball&) = delete;
@@ -142,15 +142,15 @@ public:
 
 
 	// Рисование шара в текущем положении
-	void Draw() const;
+	void Draw() const override;
 
 
 
 	// Изменение положения шара в предположении, что с момента 
 	// предыдущего изменения прошел единичный промежуток времени
-	void Update();
+	void Update() override;
 	// Извещение шара о том, что в него попал другой шар
-	void HitBy(Ball& ball);
+	void HitBy(Ball& ball) override;
 	// Расчет угла между осью OX и направлением от центра шара до точки,
 	// смещенной от центра шара на (dx, dy)
 	double HitAngle(double dx, double dy) const;
@@ -160,35 +160,34 @@ public:
 	void   SetCenter(int newx, int newy);
 	void   SetDirection(double newDir) { direction = newDir; };
 
-	Rect   GetRegion() const { return region; }
+//	Rect   GetRegion() const { return region; }
 	double GetEnergy() const { return energy; }
 	void   GetCenter(int& x, int& y) const;
 	double GetDirection() const { return direction; }
 	bool   IsCue() const { return fCue; }
 
-	const Ball* GetLink() const { return pLink; }
-	Ball* GetLink() { return pLink; }
+//	const Ball* GetLink() const { return pLink; }
+//	Ball* GetLink() { return pLink; }
 
 
 
 private:
-	Ball* pLink;		// Указатель на следующий шар связного списка
-	Rect   region;		// Экранная область, в которую вписан шар
+//	Ball* pLink;		// Указатель на следующий шар связного списка
+//	Rect   region;		// Экранная область, в которую вписан шар
 	double direction;	// Направление движения шара (угол в радианах 
 	// относительно оси OX)
 	double energy;		// Энергия шара
 	bool   fCue;		// Признак белого шара
 	RedGreenBlue rgb = RedGreenBlue(0, 0, 255);
-	//	RedGreenBlue re
 };
 
 
-Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
+Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_) :
 	GraphicalObject(x - 5, y - 5, x, y),
-	pLink(pNextBall),
 	fCue(fc),
 	rgb(rgb_)
 {
+	pLink = pNextBall;
 	SetCenter(x, y);
 	SetDirection(0);
 	SetEnergy(0.0);
@@ -466,7 +465,7 @@ void Ball::Update()
 	}
 
 	// Проверка на попадание в другой шар
-	Ball* bptr = listOfBalls;
+	GraphicalObject* bptr = listOfBalls;
 	while (bptr)
 	{
 		// Особый случай: пропускать случай попадания «шара в самого себя»
@@ -647,7 +646,7 @@ void CALLBACK Display()
 	}
 
 	// Рисование шаров
-	const Ball* pBall = listOfBalls;
+	const GraphicalObject* pBall = listOfBalls;
 	while (pBall)
 	{
 		pBall->Draw();
@@ -669,7 +668,7 @@ void CALLBACK Idle()
 
 	// Обновление положения шаров
 	fBallMoved = false;
-	Ball* bptr = listOfBalls;
+	GraphicalObject* bptr = listOfBalls;
 	while (bptr)
 	{
 		bptr->Update();
