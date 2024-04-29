@@ -112,9 +112,10 @@ public:
 
 class GraphicalObject {
 public:
-	GraphicalObject(int left, int top, int right, int bottom)
+	GraphicalObject(int left, int top, int right, int bottom, GraphicalObject* pLink_)
 	{
 		region = Rect(left, top, right, bottom);
+		pLink = pLink_;
 	}
 	// Операции, выполняемые графическими объектами 
 	virtual void Draw() const {}
@@ -183,11 +184,11 @@ private:
 
 
 Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_) :
-	GraphicalObject(x - 5, y - 5, x, y),
+	GraphicalObject(x - 5, y - 5, x, y, pNextBall),
 	fCue(fc),
 	rgb(rgb_)
 {
-	pLink = pNextBall;
+//	pLink = pNextBall;
 	SetCenter(x, y);
 	SetDirection(0);
 	SetEnergy(0.0);
