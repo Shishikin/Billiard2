@@ -126,8 +126,8 @@ public:
 	const GraphicalObject* GetLink() const { return pLink; }
 	GraphicalObject* GetLink() { return pLink; }
 protected:
-	Rect region;
-	GraphicalObject* pLink =nullptr;
+	Rect region;                          // Ёкранна€ область
+	GraphicalObject* pLink =nullptr;      // ”казатель на следующий
 };
 
 
@@ -161,20 +161,16 @@ public:
 	void   SetCenter(int newx, int newy);
 	void   SetDirection(double newDir) { direction = newDir; };
 
-//	Rect   GetRegion() const { return region; }
 	double GetEnergy() const { return energy; }
 	void   GetCenter(int& x, int& y) const;
 	double GetDirection() const { return direction; }
 	bool   IsCue() const { return fCue; }
 
-//	const Ball* GetLink() const { return pLink; }
-//	Ball* GetLink() { return pLink; }
 
 
 
 private:
-//	Ball* pLink;		// ”казатель на следующий шар св€зного списка
-//	Rect   region;		// Ёкранна€ область, в которую вписан шар
+
 	double direction;	// Ќаправление движени€ шара (угол в радианах 
 	// относительно оси OX)
 	double energy;		// Ёнерги€ шара
@@ -184,11 +180,10 @@ private:
 
 
 Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_) :
-	GraphicalObject(x - 5, y - 5, x, y, pNextBall),
+	GraphicalObject(x - 5, y - 5, x + 5, y + 5, pNextBall),
 	fCue(fc),
 	rgb(rgb_)
 {
-//	pLink = pNextBall;
 	SetCenter(x, y);
 	SetDirection(0);
 	SetEnergy(0.0);
@@ -196,23 +191,19 @@ Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_)
 
 
 //  ласс "—тенка биль€рдного стола"
-class Wall {
+class Wall : public GraphicalObject
+{
 public:
 	Wall(int left, int top, int right, int bottom,
-		double cf, Wall* pNextWall);
+		double cf, GraphicalObject* pNextWall);
 
 	// –исование стенки
 	void Draw() const;
 	// »звещение стенки о том, что в нее попал шар 
 	void HitBy(Ball& ball);
 
-	Rect  GetRegion() const { return region; }
-	const Wall* GetLink() const { return pLink; }
-	Wall* GetLink() { return pLink; }
-
 private:
-	Wall* pLink;
-	Rect region;			// Ёкранные координаты стенки
+
 	double convertFactor;	// «начение, из которого вычитаетс€ 
 	// направление ударившего шара, чтобы
 	// получилось зеркальное отражение
@@ -226,9 +217,10 @@ private:
 
 
 //  ласс "Ћуза биль€рдного стола"  
-class Hole {
+class Hole : public GraphicalObject
+{
 public:
-	Hole(int x, int y, Hole* pNextHole);
+	Hole(int x, int y, GraphicalObject* pNextHole);
 
 	// «апрет копирующего конструктора и операции присваивани€ 
 	// с помощью ключевого слова delete
@@ -240,14 +232,14 @@ public:
 	// »звещение лузы о том, что в нее попал шар 
 	void HitBy(Ball& ball);
 
-	Rect GetRegion() const { return region; }
-	const Hole* GetLink() const { return pLink; }
-	Hole* GetLink() { return pLink; }
+//	Rect GetRegion() const { return region; }
+//	const Hole* GetLink() const { return pLink; }
+//	Hole* GetLink() { return pLink; }
 
 private:
-	Hole* pLink;	// ”казатель на следующую лузу дл€ образовани€ 
+//	Hole* pLink;	// ”казатель на следующую лузу дл€ образовани€ 
 	// св€зного списка
-	Rect region;	// Ёкранные координаты области лузы
+//	Rect region;	// Ёкранные координаты области лузы
 };
 
 
@@ -299,12 +291,9 @@ Rect Rect::IntersectRect(const Rect& another) const
 // ********************************************************************************
 
 Wall::Wall(int left, int top, int right, int bottom,
-	double cf, Wall* pNextWall) :
-	convertFactor(cf),
-	pLink(pNextWall)
-{
-	region.SetRect(left, top, right, bottom);
-}
+	double cf, GraphicalObject* pNextWall) :
+	GraphicalObject(left, top, right, bottom, pNextWall),
+	convertFactor(cf){}
 
 
 void Wall::Draw() const
@@ -327,12 +316,8 @@ void Wall::HitBy(Ball& ball)
 //   –еализаци€ класса Hole
 // ********************************************************************************
 
-Hole::Hole(int x, int y, Hole* pNextHole) :
-	pLink(pNextHole)
-{
-	// ќписывающий пр€моугольник дл€ лузы с центром в точке (x, y)
-	region.SetRect(x - 5, y - 5, x + 5, y + 5);
-}
+Hole::Hole(int x, int y, GraphicalObject* pNextHole) :
+	GraphicalObject(x - 5, y - 5, x + 5, y + 5, pNextHole){}
 
 
 void Hole::Draw() const
@@ -372,18 +357,7 @@ void Hole::HitBy(Ball& ball)
 //   –еализаци€ класса Ball
 // ********************************************************************************
 
-/*
-Ball::Ball(int x, int y, bool fc, Ball* pNextBall, RedGreenBlue rgb_) :
-	GraphicalObject(x-5, y-5, x, y),
-	pLink(pNextBall),
-	fCue(fc),
-	rgb(rgb_)
-{
-	SetCenter(x, y);
-	SetDirection(0);
-	SetEnergy(0.0);
-}
-*/
+
 
 void Ball::Draw() const
 {
@@ -438,7 +412,7 @@ void Ball::Update()
 	region.OffsetRect(dx, dy);
 
 	// ѕроверка на попадание в лузу
-	Hole* hptr = listOfHoles;
+	GraphicalObject* hptr = listOfHoles;
 	while (hptr)
 	{
 		Rect is = region.IntersectRect(hptr->GetRegion());
@@ -452,7 +426,7 @@ void Ball::Update()
 	}
 
 	// ѕроверка на попадание в стенку
-	Wall* wptr = listOfWalls;
+	GraphicalObject* wptr = listOfWalls;
 	while (wptr)
 	{
 		Rect is = region.IntersectRect(wptr->GetRegion());
@@ -631,7 +605,7 @@ void CALLBACK Display()
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// –исование стенок стола
-	const Wall* pWall = listOfWalls;
+	const GraphicalObject* pWall = listOfWalls;
 	while (pWall)
 	{
 		pWall->Draw();
@@ -639,7 +613,7 @@ void CALLBACK Display()
 	}
 
 	// –исование луз
-	const Hole* pHole = listOfHoles;
+	const GraphicalObject* pHole = listOfHoles;
 	while (pHole)
 	{
 		pHole->Draw();
