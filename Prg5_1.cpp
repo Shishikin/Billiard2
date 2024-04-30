@@ -60,12 +60,9 @@ class Ball;
 // Глобальные переменные, совместно представляющие модель бильярда
 bool   fBallMoved = false;		// Флаг наличия хотя бы одного движущегося шара
 int	   saveRack = 0;			// Счетчик выбитых шаров
-Wall* listOfWalls = nullptr;	// Указатель на голову связного списка стенок стола
-Hole* listOfHoles = nullptr;	// Указатель на голову связного списка луз
-Ball* listOfBalls = nullptr;	// Указатель на голову связного списка шаров
+
 Ball* pCueBall = nullptr;	// Указатель на белый шар (в списке от тоже есть)
-
-
+GraphicalObject* listOfObjects = nullptr;
 
 // ********************************************************************************
 //   Определения классов
@@ -166,9 +163,6 @@ public:
 	double GetDirection() const { return direction; }
 	bool   IsCue() const { return fCue; }
 
-
-
-
 private:
 
 	double direction;	// Направление движения шара (угол в радианах 
@@ -178,16 +172,6 @@ private:
 	RedGreenBlue rgb = RedGreenBlue(0, 0, 255);
 };
 
-
-Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_) :
-	GraphicalObject(x - 5, y - 5, x + 5, y + 5, pNextBall),
-	fCue(fc),
-	rgb(rgb_)
-{
-	SetCenter(x, y);
-	SetDirection(0);
-	SetEnergy(0.0);
-}
 
 
 // Класс "Стенка бильярдного стола"
@@ -232,14 +216,6 @@ public:
 	// Извещение лузы о том, что в нее попал шар 
 	void HitBy(Ball& ball);
 
-//	Rect GetRegion() const { return region; }
-//	const Hole* GetLink() const { return pLink; }
-//	Hole* GetLink() { return pLink; }
-
-private:
-//	Hole* pLink;	// Указатель на следующую лузу для образования 
-	// связного списка
-//	Rect region;	// Экранные координаты области лузы
 };
 
 
@@ -357,7 +333,15 @@ void Hole::HitBy(Ball& ball)
 //   Реализация класса Ball
 // ********************************************************************************
 
-
+Ball::Ball(int x, int y, bool fc, GraphicalObject* pNextBall, RedGreenBlue rgb_) :
+	GraphicalObject(x - 5, y - 5, x + 5, y + 5, pNextBall),
+	fCue(fc),
+	rgb(rgb_)
+{
+	SetCenter(x, y);
+	SetDirection(0);
+	SetEnergy(0.0);
+}
 
 void Ball::Draw() const
 {
@@ -411,36 +395,8 @@ void Ball::Update()
 	int dy = static_cast<int>(2.0 * sqrt(energy) * sin(direction));
 	region.OffsetRect(dx, dy);
 
-	// Проверка на попадание в лузу
-	GraphicalObject* hptr = listOfHoles;
-	while (hptr)
-	{
-		Rect is = region.IntersectRect(hptr->GetRegion());
-		if (!is.IsRectEmpty())
-		{
-			hptr->HitBy(*this);
-			hptr = nullptr;
-		}
-		else
-			hptr = hptr->GetLink();
-	}
 
-	// Проверка на попадание в стенку
-	GraphicalObject* wptr = listOfWalls;
-	while (wptr)
-	{
-		Rect is = region.IntersectRect(wptr->GetRegion());
-		if (!is.IsRectEmpty())
-		{
-			wptr->HitBy(*this);
-			wptr = nullptr;
-		}
-		else
-			wptr = wptr->GetLink();
-	}
-
-	// Проверка на попадание в другой шар
-	GraphicalObject* bptr = listOfBalls;
+	GraphicalObject* bptr = listOfObjects;
 	while (bptr)
 	{
 		// Особый случай: пропускать случай попадания «шара в самого себя»
@@ -455,6 +411,7 @@ void Ball::Update()
 		}
 		bptr = bptr->GetLink();
 	}
+
 }
 
 // Расчет угла между осью OX и вектором (dx, dy)
@@ -524,49 +481,52 @@ void ChooseRedGreenBlue(RedGreenBlue& rgb, int count)
 void CreateGlobals()
 {
 	saveRack = 0;		// Счетчик выбитых шаров
-	listOfWalls = nullptr;	// Указатель на голову связного списка стенок
-	listOfHoles = nullptr; // Указатель на голову связного списка луз
-	listOfBalls = nullptr; // Указатель на голову связного списка шаров
-
-	// Создание стенок
-	Wall* pNewWall = new Wall(10, 10, 300, 15, 0.0, listOfWalls);
-	listOfWalls = pNewWall;
-	pNewWall = new Wall(10, 200, 300, 205, 0.0, listOfWalls);
-	listOfWalls = pNewWall;
-	pNewWall = new Wall(10, 10, 15, 200, PI, listOfWalls);
-	listOfWalls = pNewWall;
-	pNewWall = new Wall(300, 10, 305, 205, PI, listOfWalls);
-	listOfWalls = pNewWall;
-
-	// Создание луз
-	Hole* pNewHole = new Hole(15, 15, listOfHoles);
-	listOfHoles = pNewHole;
-	pNewHole = new Hole(15, 200, listOfHoles);
-	listOfHoles = pNewHole;
-	pNewHole = new Hole(300, 15, listOfHoles);
-	listOfHoles = pNewHole;
-	pNewHole = new Hole(300, 200, listOfHoles);
-	listOfHoles = pNewHole;
-	pNewHole = new Hole(157, 15, listOfHoles);
-	listOfHoles = pNewHole;
-	pNewHole = new Hole(157, 200, listOfHoles);
-	listOfHoles = pNewHole;
+	listOfObjects = nullptr;
 
 	// Создание шаров. 
+
 	// Сначала создается белый шар, а затем 15 синих. В связном
 	// списке белый шар располагается последним.
 	RedGreenBlue rgb = RedGreenBlue(0, 0, 255);
 	int count = 0;
 	pCueBall = new Ball(50, 108, true, NULL, rgb);
-	listOfBalls = pCueBall;
+	listOfObjects = pCueBall;
 	for (int i = 1; i <= 5; i++)
 		for (int j = 1; j <= i; j++)
 		{
 			ChooseRedGreenBlue(rgb, count);
-			Ball* pNewBall = new Ball(190 + i * 8, 100 + 16 * j - 8 * i, false, listOfBalls, rgb);
-			listOfBalls = pNewBall;
+			Ball* pNewBall = new Ball(190 + i * 8, 100 + 16 * j - 8 * i, false, listOfObjects, rgb);
+			listOfObjects = pNewBall;
 			++count;
 		}
+
+
+	// Создание стенок
+	Wall* pNewWall = new Wall(10, 10, 300, 15, 0.0, listOfObjects);
+	listOfObjects = pNewWall;
+	pNewWall = new Wall(10, 200, 300, 205, 0.0, listOfObjects);
+	listOfObjects = pNewWall;
+	pNewWall = new Wall(10, 10, 15, 200, PI, listOfObjects);
+	listOfObjects = pNewWall;
+	pNewWall = new Wall(300, 10, 305, 205, PI, listOfObjects);
+	listOfObjects = pNewWall;
+
+	// Создание луз
+	Hole* pNewHole = new Hole(15, 15, listOfObjects);
+	listOfObjects = pNewHole;
+	pNewHole = new Hole(15, 200, listOfObjects);
+	listOfObjects = pNewHole;
+	pNewHole = new Hole(300, 15, listOfObjects);
+	listOfObjects = pNewHole;
+	pNewHole = new Hole(300, 200, listOfObjects);
+	listOfObjects = pNewHole;
+	pNewHole = new Hole(157, 15, listOfObjects);
+	listOfObjects = pNewHole;
+	pNewHole = new Hole(157, 200, listOfObjects);
+	listOfObjects = pNewHole;
+
+
+	
 }
 
 
@@ -604,28 +564,11 @@ void CALLBACK Display()
 	// Очистка буфера в памяти (он используется для отрисовки сцены)
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Рисование стенок стола
-	const GraphicalObject* pWall = listOfWalls;
-	while (pWall)
+	const GraphicalObject* pObj = listOfObjects;
+	while (pObj)
 	{
-		pWall->Draw();
-		pWall = pWall->GetLink();
-	}
-
-	// Рисование луз
-	const GraphicalObject* pHole = listOfHoles;
-	while (pHole)
-	{
-		pHole->Draw();
-		pHole = pHole->GetLink();
-	}
-
-	// Рисование шаров
-	const GraphicalObject* pBall = listOfBalls;
-	while (pBall)
-	{
-		pBall->Draw();
-		pBall = pBall->GetLink();
+		pObj->Draw();
+		pObj = pObj->GetLink();
 	}
 
 	// Обмен буферов - экранного буфера и 
@@ -643,7 +586,7 @@ void CALLBACK Idle()
 
 	// Обновление положения шаров
 	fBallMoved = false;
-	GraphicalObject* bptr = listOfBalls;
+	GraphicalObject* bptr = listOfObjects;
 	while (bptr)
 	{
 		bptr->Update();
