@@ -458,21 +458,21 @@ void Ball::HitBy(Ball& ball)
 //   √лобальные функции, не €вл€ющиес€ членами ни одного из классов
 // ********************************************************************************
 
-void ChooseRedGreenBlue(RedGreenBlue& rgb, int count)
+RedGreenBlue ChooseRedGreenBlue(int count)
 {
 	if (count < 5)
 	{
-		rgb = RedGreenBlue(0, 0, 255);
+		return RedGreenBlue(0, 0, 255);
 	}
 	else
 	{
 		if (count < 10)
 		{
-			rgb = RedGreenBlue(0, 255, 0);
+			return RedGreenBlue(0, 255, 0);
 		}
 		else
 		{
-			rgb = RedGreenBlue(255, 0, 0);
+			return RedGreenBlue(255, 0, 0);
 		}
 	}
 }
@@ -494,7 +494,7 @@ void CreateGlobals()
 	for (int i = 1; i <= 5; i++)
 		for (int j = 1; j <= i; j++)
 		{
-			ChooseRedGreenBlue(rgb, count);
+			rgb = ChooseRedGreenBlue(count);
 			Ball* pNewBall = new Ball(190 + i * 8, 100 + 16 * j - 8 * i, false, listOfObjects, rgb);
 			listOfObjects = pNewBall;
 			++count;
